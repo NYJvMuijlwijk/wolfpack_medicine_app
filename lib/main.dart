@@ -72,9 +72,14 @@ class _MomentItemState extends State<_MomentItem> {
     moment = widget.moment;
   }
 
-  void ToggleMedicineTaken() {
+  void ToggleAllMedicineTaken() {
     final allTaken = moment.medicines.every((m) => m.taken);
     for (Medicine medicine in moment.medicines) medicine.taken = !allTaken;
+    setState(() {});
+  }
+
+  void ToggleMedicineTaken(Medicine medicine) {
+    medicine.taken = !medicine.taken;
     setState(() {});
   }
 
@@ -85,9 +90,19 @@ class _MomentItemState extends State<_MomentItem> {
       subtitle: Text(timeFormat.format(moment.date)),
       leading: Image.asset(moment.iconPath),
       trailing: InkWell(
-        onTap: ToggleMedicineTaken,
+        onTap: ToggleAllMedicineTaken,
         child: Image.asset(moment.medicines.every((element) => element.taken) ? AssetPaths.checkbox_white : AssetPaths.checkbox_empty),
       ),
+      children: moment.medicines
+          .map((m) => InkWell(
+                onTap: () => ToggleMedicineTaken(m),
+                child: ListTile(
+                  title: Text(m.name),
+                  subtitle: Text("Medicijn hoeveelheid"),
+                  trailing: Image.asset(m.taken ? AssetPaths.checkbox_green : AssetPaths.checkbox_empty),
+                ),
+              ))
+          .toList(),
     );
   }
 }
