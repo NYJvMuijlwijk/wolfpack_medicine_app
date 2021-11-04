@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:wolfpack_medicine_app/data/AssetPaths.dart';
+import 'package:wolfpack_medicine_app/data/Medicine.dart';
+import 'package:wolfpack_medicine_app/data/MedicineDate.dart';
+import 'package:wolfpack_medicine_app/data/Moment.dart';
+import 'package:wolfpack_medicine_app/data/MomentAPI.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,53 +20,73 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      debugShowCheckedModeBanner: false,
+      home: MyHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
+class MyHomePage extends StatelessWidget {
+  MyHomePage({Key? key}) : super(key: key);
 
-  final String title;
+  final List<MedicineDate> moments = MomentAPI.getMoments();
+  final DateFormat dayFormat = new DateFormat("EEEE d MMMM");
 
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: ListView(
+        children: [
+          for (MedicineDate date in moments) ...[
+            Text(
+              dayFormat.format(date.date),
+              style: Theme.of(context).textTheme.headline4,
+            ),
+            for (Moment moment in date.moments) _MomentItem(moment: moment),
+          ]
+        ],
+      ),
+    );
+  }
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MomentItem extends StatefulWidget {
+  final Moment moment;
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+  const _MomentItem({
+    required this.moment,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<_MomentItem> createState() => _MomentItemState();
+}
+
+class _MomentItemState extends State<_MomentItem> {
+  final DateFormat timeFormat = new DateFormat.Hm();
+  late Moment moment;
+
+  @override
+  void initState() {
+    super.initState();
+
+    moment = widget.moment;
+  }
+
+  void ToggleMedicineTaken() {
+    final allTaken = moment.medicines.every((m) => m.taken);
+    for (Medicine medicine in moment.medicines) medicine.taken = !allTaken;
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+    return ExpansionTile(
+      title: Text(moment.title),
+      subtitle: Text(timeFormat.format(moment.date)),
+      leading: Image.asset(moment.iconPath),
+      trailing: InkWell(
+        onTap: ToggleMedicineTaken,
+        child: Image.asset(moment.medicines.every((element) => element.taken) ? AssetPaths.checkbox_white : AssetPaths.checkbox_empty),
       ),
     );
   }
